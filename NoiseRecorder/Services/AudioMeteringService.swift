@@ -1,5 +1,11 @@
 import AVFoundation
-import Combine
+
+struct ThresholdExceedEvent {
+    let timestamp: Date
+    let maxDecibels: Double
+    let averageDecibels: Double
+    let durationSeconds: Double
+}
 
 @MainActor @Observable
 final class AudioMeteringService {
@@ -10,12 +16,13 @@ final class AudioMeteringService {
     private var timer: Timer?
     private let settings = AppSettings.shared
 
-    // 閾値超過トラッキング
+    // 閾値超過トラッキング（running statistics）
     private var exceedStartTime: Date?
     private var exceedMaxDb: Double = 0
-    private var exceedDbSamples: [Double] = []
+    private var exceedDbSum: Double = 0
+    private var exceedDbCount: Int = 0
 
-    var onThresholdExceeded: ((Date, Double, Double, Double) -> Void)?
+    var onThresholdExceeded: ((ThresholdExceedEvent) -> Void)?
 
     func startMetering() {
         let session = AVAudioSession.sharedInstance()
@@ -66,7 +73,7 @@ final class AudioMeteringService {
         recorder.updateMeters()
 
         // AVAudioRecorder の averagePower は dBFS（-160〜0）
-        // 簡易的に +160 してポジティブな値に変換
+        // +160 してポジティブな値に変換（相対値として使用）
         let power = Double(recorder.averagePower(forChannel: 0))
         let normalizedDb = max(0, power + 160)
 
@@ -79,10 +86,12 @@ final class AudioMeteringService {
             if exceedStartTime == nil {
                 exceedStartTime = Date()
                 exceedMaxDb = db
-                exceedDbSamples = [db]
+                exceedDbSum = db
+                exceedDbCount = 1
             } else {
                 exceedMaxDb = max(exceedMaxDb, db)
-                exceedDbSamples.append(db)
+                exceedDbSum += db
+                exceedDbCount += 1
             }
         } else {
             finalizeExceedEvent()
@@ -90,21 +99,31 @@ final class AudioMeteringService {
     }
 
     private func finalizeExceedEvent() {
-        guard let startTime = exceedStartTime else { return }
-
-        let duration = Date().timeIntervalSince(startTime)
-        // 0.5秒未満の超過は無視（ノイズ対策）
-        guard duration >= 0.5 else {
-            exceedStartTime = nil
-            exceedDbSamples = []
+        guard let startTime = exceedStartTime, exceedDbCount > 0 else {
+            resetExceedTracking()
             return
         }
 
-        let avgDb = exceedDbSamples.reduce(0, +) / Double(exceedDbSamples.count)
-        onThresholdExceeded?(startTime, exceedMaxDb, avgDb, duration)
+        let duration = Date().timeIntervalSince(startTime)
+        guard duration >= 0.5 else {
+            resetExceedTracking()
+            return
+        }
 
+        let event = ThresholdExceedEvent(
+            timestamp: startTime,
+            maxDecibels: exceedMaxDb,
+            averageDecibels: exceedDbSum / Double(exceedDbCount),
+            durationSeconds: duration
+        )
+        onThresholdExceeded?(event)
+        resetExceedTracking()
+    }
+
+    private func resetExceedTracking() {
         exceedStartTime = nil
         exceedMaxDb = 0
-        exceedDbSamples = []
+        exceedDbSum = 0
+        exceedDbCount = 0
     }
 }

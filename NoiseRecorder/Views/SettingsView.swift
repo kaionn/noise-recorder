@@ -2,131 +2,89 @@ import SwiftUI
 
 struct SettingsView: View {
     private let settings = AppSettings.shared
-    @State private var threshold: Double = AppSettings.shared.threshold
+
+    private var appVersion: String {
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0"
+    }
 
     var body: some View {
-        ZStack {
-            AppColor.background.ignoresSafeArea()
+        ScrollView {
+            VStack(spacing: 24) {
+                HStack {
+                    Text("Settings")
+                        .font(.system(size: 20, weight: .bold))
+                    Spacer()
+                }
+                .padding(.horizontal)
 
-            ScrollView {
-                VStack(spacing: 24) {
-                    // ヘッダー
-                    HStack {
-                        Text("Settings")
-                            .font(.system(size: 20, weight: .bold))
-                        Spacer()
+                // 閾値セクション
+                VStack(spacing: 20) {
+                    SectionLabel(text: "NOISE THRESHOLD")
+                        .frame(maxWidth: .infinity, alignment: .leading)
+
+                    HStack(alignment: .firstTextBaseline, spacing: 4) {
+                        Text("\(Int(settings.threshold))")
+                            .font(.system(size: 64, weight: .bold, design: .rounded))
+                            .foregroundStyle(AppColor.accent)
+                        Text("dB")
+                            .font(.system(size: 24, weight: .medium))
+                            .foregroundStyle(.gray)
                     }
-                    .padding(.horizontal)
 
-                    // 閾値セクション
-                    VStack(spacing: 20) {
-                        Text("NOISE THRESHOLD")
-                            .font(.system(size: 10, weight: .medium))
-                            .foregroundStyle(.gray)
-                            .tracking(1)
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                    SectionLabel(text: "ACTIVE THRESHOLD")
 
-                        // 大きな数値表示
-                        HStack(alignment: .firstTextBaseline, spacing: 4) {
-                            Text("\(Int(threshold))")
-                                .font(.system(size: 64, weight: .bold, design: .rounded))
-                                .foregroundStyle(AppColor.accent)
-                            Text("dB")
-                                .font(.system(size: 24, weight: .medium))
-                                .foregroundStyle(.gray)
-                        }
-
-                        Text("ACTIVE THRESHOLD")
-                            .font(.system(size: 10, weight: .medium))
-                            .foregroundStyle(.gray)
-                            .tracking(1)
-
-                        // スライダー
-                        VStack(spacing: 8) {
-                            Slider(value: $threshold, in: 30...100, step: 1) {
-                                Text("Threshold")
-                            } onEditingChanged: { editing in
-                                if !editing { settings.threshold = threshold }
-                            }
-                            .tint(AppColor.accent)
-
-                            HStack {
-                                Text("30 dB")
-                                    .font(.system(size: 10))
-                                    .foregroundStyle(.gray)
-                                Spacer()
-                                Text("65 dB")
-                                    .font(.system(size: 10))
-                                    .foregroundStyle(.gray)
-                                Spacer()
-                                Text("100 dB")
-                                    .font(.system(size: 10))
-                                    .foregroundStyle(.gray)
-                            }
-                        }
-
-                        // リファレンスガイド
-                        VStack(spacing: 0) {
-                            ThresholdReference(
-                                db: 40,
-                                title: "40 dB Library level (night)",
-                                subtitle: "MINIMAL NOISE",
-                                current: threshold
-                            )
-                            Divider().overlay(Color.gray.opacity(0.2))
-                            ThresholdReference(
-                                db: 50,
-                                title: "50 dB Normal conversation (day)",
-                                subtitle: "AMBIENT HUMAN",
-                                current: threshold
-                            )
-                            Divider().overlay(Color.gray.opacity(0.2))
-                            ThresholdReference(
-                                db: 60,
-                                title: "60 dB Vacuum cleaner (loud)",
-                                subtitle: "MECHANICAL NOISE",
-                                current: threshold
-                            )
-                        }
-                    }
-                    .padding(16)
-                    .background(AppColor.cardBackground)
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
-                    .padding(.horizontal)
-
-                    // About セクション
-                    VStack(alignment: .leading, spacing: 16) {
-                        Text("ABOUT")
-                            .font(.system(size: 10, weight: .medium))
-                            .foregroundStyle(.gray)
-                            .tracking(1)
+                    VStack(spacing: 8) {
+                        Slider(value: Binding(
+                            get: { settings.threshold },
+                            set: { settings.threshold = $0 }
+                        ), in: 30...100, step: 1)
+                        .tint(AppColor.accent)
 
                         HStack {
-                            Text("Version Info")
-                                .foregroundStyle(.white)
+                            Text("30 dB").font(.system(size: 10)).foregroundStyle(.gray)
                             Spacer()
-                            Text("Version 1.0.0")
-                                .foregroundStyle(.gray)
-                        }
-
-                        Divider().overlay(Color.gray.opacity(0.2))
-
-                        HStack(alignment: .top, spacing: 10) {
-                            Image(systemName: "info.circle")
-                                .foregroundStyle(.gray)
-                            Text("Relative dB values are approximate and intended for reference only. Accuracy depends on device hardware.")
-                                .font(.system(size: 13))
-                                .foregroundStyle(.gray)
+                            Text("65 dB").font(.system(size: 10)).foregroundStyle(.gray)
+                            Spacer()
+                            Text("100 dB").font(.system(size: 10)).foregroundStyle(.gray)
                         }
                     }
-                    .padding(16)
-                    .background(AppColor.cardBackground)
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
-                    .padding(.horizontal)
+
+                    VStack(spacing: 0) {
+                        ThresholdReference(db: 40, title: "40 dB Library level (night)", subtitle: "MINIMAL NOISE", current: settings.threshold)
+                        Divider().overlay(Color.gray.opacity(0.2))
+                        ThresholdReference(db: 50, title: "50 dB Normal conversation (day)", subtitle: "AMBIENT HUMAN", current: settings.threshold)
+                        Divider().overlay(Color.gray.opacity(0.2))
+                        ThresholdReference(db: 60, title: "60 dB Vacuum cleaner (loud)", subtitle: "MECHANICAL NOISE", current: settings.threshold)
+                    }
                 }
-                .padding(.top)
+                .cardStyle()
+                .padding(.horizontal)
+
+                // About セクション
+                VStack(alignment: .leading, spacing: 16) {
+                    SectionLabel(text: "ABOUT")
+
+                    HStack {
+                        Text("Version Info").foregroundStyle(.white)
+                        Spacer()
+                        Text("Version \(appVersion)").foregroundStyle(.gray)
+                    }
+
+                    Divider().overlay(Color.gray.opacity(0.2))
+
+                    HStack(alignment: .top, spacing: 10) {
+                        Image(systemName: "info.circle").foregroundStyle(.gray)
+                        Text("Relative dB values are approximate and intended for reference only. Accuracy depends on device hardware.")
+                            .font(.system(size: 13))
+                            .foregroundStyle(.gray)
+                    }
+                }
+                .cardStyle()
+                .padding(.horizontal)
             }
+            .padding(.top)
         }
+        .appBackground()
     }
 }
 
@@ -146,10 +104,7 @@ private struct ThresholdReference: View {
                 Text(title)
                     .font(.system(size: 14))
                     .foregroundStyle(.white)
-                Text(subtitle)
-                    .font(.system(size: 10, weight: .medium))
-                    .foregroundStyle(.gray)
-                    .tracking(1)
+                SectionLabel(text: subtitle)
             }
             Spacer()
         }

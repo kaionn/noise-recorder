@@ -22,7 +22,6 @@ struct PDFReportGenerator {
             context.beginPage()
             var y: CGFloat = margin
 
-            // タイトル
             let titleAttr: [NSAttributedString.Key: Any] = [
                 .font: UIFont.boldSystemFont(ofSize: 20)
             ]
@@ -30,7 +29,6 @@ struct PDFReportGenerator {
             title.draw(at: CGPoint(x: margin, y: y), withAttributes: titleAttr)
             y += 35
 
-            // ヘッダー情報
             let headerAttr: [NSAttributedString.Key: Any] = [
                 .font: UIFont.systemFont(ofSize: 12)
             ]
@@ -49,7 +47,6 @@ struct PDFReportGenerator {
                 y += 20
             }
 
-            // テーブルヘッダー
             let tableHeaderAttr: [NSAttributedString.Key: Any] = [
                 .font: UIFont.boldSystemFont(ofSize: 10)
             ]
@@ -64,7 +61,6 @@ struct PDFReportGenerator {
                 ("持続時間", contentWidth * 0.7)
             ]
 
-            // ヘッダー行の背景
             let headerRect = CGRect(x: margin, y: y, width: contentWidth, height: 20)
             UIColor.systemGray5.setFill()
             UIRectFill(headerRect)
@@ -74,7 +70,6 @@ struct PDFReportGenerator {
             }
             y += 22
 
-            // イベント行
             for event in info.events {
                 if y > pageHeight - margin - 30 {
                     context.beginPage()
@@ -83,9 +78,9 @@ struct PDFReportGenerator {
 
                 let row = [
                     dateFormatter.string(from: event.timestamp),
-                    String(format: "%.1f", event.maxDecibels),
-                    String(format: "%.1f", event.averageDecibels),
-                    formatDuration(event.durationSeconds)
+                    event.maxDecibels.formattedDb,
+                    event.averageDecibels.formattedDb,
+                    event.durationSeconds.formattedDuration(style: .japanese)
                 ]
 
                 for (i, text) in row.enumerated() {
@@ -93,7 +88,6 @@ struct PDFReportGenerator {
                 }
                 y += 18
 
-                // 区切り線
                 let linePath = UIBezierPath()
                 linePath.move(to: CGPoint(x: margin, y: y))
                 linePath.addLine(to: CGPoint(x: margin + contentWidth, y: y))
@@ -103,7 +97,6 @@ struct PDFReportGenerator {
                 y += 2
             }
 
-            // フッター
             y = pageHeight - margin
             let footerAttr: [NSAttributedString.Key: Any] = [
                 .font: UIFont.systemFont(ofSize: 9),
@@ -114,14 +107,5 @@ struct PDFReportGenerator {
         }
 
         return data
-    }
-
-    private static func formatDuration(_ seconds: Double) -> String {
-        if seconds < 60 {
-            return String(format: "%.0f秒", seconds)
-        }
-        let min = Int(seconds) / 60
-        let sec = Int(seconds) % 60
-        return "\(min)分\(sec)秒"
     }
 }
