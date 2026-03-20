@@ -8,6 +8,8 @@ final class AppSettings {
     private enum Keys {
         static let threshold = "threshold"
         static let samplingInterval = "samplingInterval"
+        static let noiseFloorDbfs = "noiseFloorDbfs"
+        static let calibrationDate = "calibrationDate"
     }
 
     var threshold: Double {
@@ -18,12 +20,45 @@ final class AppSettings {
         didSet { UserDefaults.standard.set(samplingInterval, forKey: Keys.samplingInterval) }
     }
 
+    /// キャリブレーションで測定したノイズフロア（dBFS）
+    var noiseFloorDbfs: Double? {
+        didSet {
+            if let value = noiseFloorDbfs {
+                UserDefaults.standard.set(value, forKey: Keys.noiseFloorDbfs)
+            } else {
+                UserDefaults.standard.removeObject(forKey: Keys.noiseFloorDbfs)
+            }
+        }
+    }
+
+    /// キャリブレーション実施日時
+    var calibrationDate: Date? {
+        didSet {
+            if let value = calibrationDate {
+                UserDefaults.standard.set(value, forKey: Keys.calibrationDate)
+            } else {
+                UserDefaults.standard.removeObject(forKey: Keys.calibrationDate)
+            }
+        }
+    }
+
     private init() {
         let savedThreshold = UserDefaults.standard.double(forKey: Keys.threshold)
         self.threshold = savedThreshold > 0 ? savedThreshold : 50.0
 
         let savedInterval = UserDefaults.standard.double(forKey: Keys.samplingInterval)
         self.samplingInterval = savedInterval > 0 ? savedInterval : 0.1
+
+        if UserDefaults.standard.object(forKey: Keys.noiseFloorDbfs) != nil {
+            self.noiseFloorDbfs = UserDefaults.standard.double(forKey: Keys.noiseFloorDbfs)
+        }
+        self.calibrationDate = UserDefaults.standard.object(forKey: Keys.calibrationDate) as? Date
+    }
+
+    /// キャリブレーションデータをクリア
+    func clearCalibration() {
+        noiseFloorDbfs = nil
+        calibrationDate = nil
     }
 }
 

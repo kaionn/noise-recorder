@@ -53,14 +53,29 @@ struct HomeView: View {
 
             Spacer()
 
-            GaugeView(
-                decibels: meteringService.currentDecibels,
-                threshold: settings.threshold,
-                minDb: meteringService.isRecording ? minDb : lastMinDb,
-                avgDb: meteringService.isRecording ? avgDb : lastAvgDb,
-                maxDb: meteringService.isRecording ? maxDb : lastMaxDb,
-                isLastSession: !meteringService.isRecording && lastMinDb != nil
-            )
+            if meteringService.phase == .calibrating {
+                VStack(spacing: 20) {
+                    ProgressView(value: meteringService.calibrationProgress)
+                        .progressViewStyle(.linear)
+                        .tint(AppColor.accent)
+                        .frame(width: 200)
+                    Text("Calibrating microphone…")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(.gray)
+                    Text("Keep the environment quiet")
+                        .font(.system(size: 12))
+                        .foregroundStyle(.gray.opacity(0.7))
+                }
+            } else {
+                GaugeView(
+                    decibels: meteringService.currentDecibels,
+                    threshold: settings.threshold,
+                    minDb: meteringService.isRecording ? minDb : lastMinDb,
+                    avgDb: meteringService.isRecording ? avgDb : lastAvgDb,
+                    maxDb: meteringService.isRecording ? maxDb : lastMaxDb,
+                    isLastSession: !meteringService.isRecording && lastMinDb != nil
+                )
+            }
 
             Spacer()
 

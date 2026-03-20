@@ -60,6 +60,52 @@ struct SettingsView: View {
                 .cardStyle()
                 .padding(.horizontal)
 
+                // キャリブレーションセクション
+                VStack(alignment: .leading, spacing: 16) {
+                    SectionLabel(text: "CALIBRATION")
+
+                    if let noiseFloor = settings.noiseFloorDbfs,
+                       let date = settings.calibrationDate {
+                        HStack {
+                            Text("Noise Floor")
+                                .foregroundStyle(.white)
+                            Spacer()
+                            Text(String(format: "%.1f dBFS", noiseFloor))
+                                .foregroundStyle(.gray)
+                        }
+
+                        Divider().overlay(Color.gray.opacity(0.2))
+
+                        HStack {
+                            Text("Calibrated")
+                                .foregroundStyle(.white)
+                            Spacer()
+                            Text(date, style: .date)
+                                .foregroundStyle(.gray)
+                        }
+                    } else {
+                        Text("Not calibrated yet")
+                            .foregroundStyle(.gray)
+                            .font(.system(size: 14))
+                    }
+
+                    Divider().overlay(Color.gray.opacity(0.2))
+
+                    Button {
+                        settings.clearCalibration()
+                    } label: {
+                        HStack {
+                            Image(systemName: "arrow.counterclockwise")
+                            Text("Recalibrate")
+                        }
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(AppColor.accent)
+                    }
+                    .disabled(settings.noiseFloorDbfs == nil)
+                }
+                .cardStyle()
+                .padding(.horizontal)
+
                 // About セクション
                 VStack(alignment: .leading, spacing: 16) {
                     SectionLabel(text: "ABOUT")
