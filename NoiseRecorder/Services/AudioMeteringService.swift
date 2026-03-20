@@ -1,7 +1,7 @@
 import AVFoundation
 import Combine
 
-@Observable
+@MainActor @Observable
 final class AudioMeteringService {
     private(set) var currentDecibels: Double = -160
     private(set) var isRecording = false
@@ -42,7 +42,9 @@ final class AudioMeteringService {
             isRecording = true
 
             timer = Timer.scheduledTimer(withTimeInterval: settings.samplingInterval, repeats: true) { [weak self] _ in
-                self?.updateMetering()
+                MainActor.assumeIsolated {
+                    self?.updateMetering()
+                }
             }
         } catch {
             print("AVAudioRecorder setup failed: \(error)")
