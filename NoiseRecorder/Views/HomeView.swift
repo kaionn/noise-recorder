@@ -12,6 +12,11 @@ struct HomeView: View {
     @State private var dbSum: Double = 0
     @State private var dbCount: Int = 0
 
+    // 前回セッションの統計値
+    @State private var lastMinDb: Double?
+    @State private var lastAvgDb: Double?
+    @State private var lastMaxDb: Double?
+
     private var avgDb: Double? {
         dbCount > 0 ? dbSum / Double(dbCount) : nil
     }
@@ -19,17 +24,12 @@ struct HomeView: View {
     var body: some View {
         VStack(spacing: 16) {
             // ヘッダー
-            HStack {
-                HStack(spacing: 6) {
-                    Image(systemName: "waveform")
-                        .foregroundStyle(AppColor.accent)
-                    Text("NOISE RECORDER")
-                        .font(.system(size: 14, weight: .bold))
-                        .tracking(1)
-                }
-                Spacer()
-                Image(systemName: "gearshape")
-                    .foregroundStyle(.gray)
+            HStack(spacing: 6) {
+                Image(systemName: "waveform")
+                    .foregroundStyle(AppColor.accent)
+                Text("NOISE RECORDER")
+                    .font(.system(size: 14, weight: .bold))
+                    .tracking(1)
             }
             .padding(.horizontal)
 
@@ -56,15 +56,17 @@ struct HomeView: View {
             GaugeView(
                 decibels: meteringService.currentDecibels,
                 threshold: settings.threshold,
-                minDb: minDb,
-                avgDb: avgDb,
-                maxDb: maxDb
+                minDb: meteringService.isRecording ? minDb : lastMinDb,
+                avgDb: meteringService.isRecording ? avgDb : lastAvgDb,
+                maxDb: meteringService.isRecording ? maxDb : lastMaxDb,
+                isLastSession: !meteringService.isRecording && lastMinDb != nil
             )
 
             Spacer()
 
             Button {
                 if meteringService.isRecording {
+                    saveLastSession()
                     meteringService.stopMetering()
                     resetStats()
                 } else {
@@ -118,6 +120,12 @@ struct HomeView: View {
         } else {
             maxDb = db
         }
+    }
+
+    private func saveLastSession() {
+        lastMinDb = minDb
+        lastAvgDb = avgDb
+        lastMaxDb = maxDb
     }
 
     private func resetStats() {

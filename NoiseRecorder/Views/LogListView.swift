@@ -69,9 +69,6 @@ struct LogListView: View {
                     .foregroundStyle(.gray)
                     .tracking(1)
                 Spacer()
-                Text("SORT BY NEWEST")
-                    .font(.system(size: 10, weight: .medium))
-                    .foregroundStyle(AppColor.accent)
             }
             .padding(.horizontal)
 

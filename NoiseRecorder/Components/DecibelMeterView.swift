@@ -6,6 +6,7 @@ struct GaugeView: View {
     let minDb: Double?
     let avgDb: Double?
     let maxDb: Double?
+    var isLastSession: Bool = false
 
     private var normalizedLevel: Double {
         guard let db = decibels else { return 0 }
@@ -39,9 +40,6 @@ struct GaugeView: View {
                     .frame(width: 240, height: 120)
                     .animation(.linear(duration: 0.15), value: normalizedLevel)
 
-                // 閾値マーカー
-                ThresholdMarker(angle: 180 + 180 * thresholdNormalized, radius: 120)
-
                 // 数値表示
                 VStack(spacing: 2) {
                     Text(decibels.map { String(format: "%.1f", $0) } ?? "--")
@@ -57,12 +55,20 @@ struct GaugeView: View {
             .frame(height: 160)
 
             // MIN / AVG / MAX
-            HStack(spacing: 0) {
-                StatColumn(label: "MIN", value: minDb, color: .gray)
-                StatColumn(label: "AVG", value: avgDb, color: AppColor.accent)
-                    .background(AppColor.cardBackground)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                StatColumn(label: "MAX", value: maxDb, color: .gray)
+            VStack(spacing: 4) {
+                if isLastSession {
+                    Text("LAST RECORD")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(.gray.opacity(0.7))
+                        .tracking(1.5)
+                }
+                HStack(spacing: 0) {
+                    StatColumn(label: "MIN", value: minDb, color: isLastSession ? .gray.opacity(0.6) : .gray)
+                    StatColumn(label: "AVG", value: avgDb, color: isLastSession ? AppColor.accent.opacity(0.7) : AppColor.accent)
+                        .background(AppColor.cardBackground)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                    StatColumn(label: "MAX", value: maxDb, color: isLastSession ? .gray.opacity(0.6) : .gray)
+                }
             }
             .padding(.horizontal, 30)
         }
@@ -83,21 +89,6 @@ private struct ArcShape: Shape {
             clockwise: false
         )
         return path
-    }
-}
-
-private struct ThresholdMarker: View {
-    let angle: Double
-    let radius: CGFloat
-
-    var body: some View {
-        Circle()
-            .fill(AppColor.dangerRed)
-            .frame(width: 8, height: 8)
-            .offset(
-                x: radius * CGFloat(cos(angle * .pi / 180)),
-                y: radius * CGFloat(sin(angle * .pi / 180))
-            )
     }
 }
 
