@@ -7,13 +7,13 @@ struct HomeView: View {
     private let settings = AppSettings.shared
 
     // Running statistics（O(1) per sample）
-    @State private var minDb: Double = 0
-    @State private var maxDb: Double = 0
+    @State private var minDb: Double?
+    @State private var maxDb: Double?
     @State private var dbSum: Double = 0
     @State private var dbCount: Int = 0
 
-    private var avgDb: Double {
-        dbCount > 0 ? dbSum / Double(dbCount) : 0
+    private var avgDb: Double? {
+        dbCount > 0 ? dbSum / Double(dbCount) : nil
     }
 
     var body: some View {
@@ -94,32 +94,35 @@ struct HomeView: View {
 
     private var statusText: String {
         if !meteringService.isRecording { return "Standby" }
-        if meteringService.currentDecibels >= settings.threshold { return "ALERT" }
+        if let db = meteringService.currentDecibels, db >= settings.threshold { return "ALERT" }
         return "Safe"
     }
 
     private var statusColor: Color {
         if !meteringService.isRecording { return .gray }
-        if meteringService.currentDecibels >= settings.threshold { return AppColor.dangerRed }
+        if let db = meteringService.currentDecibels, db >= settings.threshold { return AppColor.dangerRed }
         return AppColor.safeGreen
     }
 
-    private func updateStats(_ db: Double) {
-        guard meteringService.isRecording else { return }
+    private func updateStats(_ db: Double?) {
+        guard meteringService.isRecording, let db else { return }
         dbCount += 1
         dbSum += db
-        if dbCount == 1 {
-            minDb = db
-            maxDb = db
+        if let currentMin = minDb {
+            minDb = min(currentMin, db)
         } else {
-            minDb = min(minDb, db)
-            maxDb = max(maxDb, db)
+            minDb = db
+        }
+        if let currentMax = maxDb {
+            maxDb = max(currentMax, db)
+        } else {
+            maxDb = db
         }
     }
 
     private func resetStats() {
-        minDb = 0
-        maxDb = 0
+        minDb = nil
+        maxDb = nil
         dbSum = 0
         dbCount = 0
     }

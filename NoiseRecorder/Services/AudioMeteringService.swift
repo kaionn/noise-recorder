@@ -9,7 +9,7 @@ struct ThresholdExceedEvent {
 
 @MainActor @Observable
 final class AudioMeteringService {
-    private(set) var currentDecibels: Double = -160
+    private(set) var currentDecibels: Double?
     private(set) var isRecording = false
 
     private var audioRecorder: AVAudioRecorder?
@@ -65,7 +65,7 @@ final class AudioMeteringService {
         audioRecorder = nil
         isRecording = false
         finalizeExceedEvent()
-        currentDecibels = -160
+        currentDecibels = nil
     }
 
     private func updateMetering() {
@@ -73,9 +73,9 @@ final class AudioMeteringService {
         recorder.updateMeters()
 
         // AVAudioRecorder の averagePower は dBFS（-160〜0）
-        // +160 してポジティブな値に変換（相対値として使用）
+        // +120 して近似 SPL に変換（iPhone マイクの 0 dBFS ≒ SPL 120 dB）
         let power = Double(recorder.averagePower(forChannel: 0))
-        let normalizedDb = max(0, power + 160)
+        let normalizedDb = max(0, power + 120)
 
         currentDecibels = normalizedDb
         checkThreshold(db: normalizedDb)

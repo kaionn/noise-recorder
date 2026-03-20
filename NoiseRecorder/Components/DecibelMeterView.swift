@@ -1,14 +1,15 @@
 import SwiftUI
 
 struct GaugeView: View {
-    let decibels: Double
+    let decibels: Double?
     let threshold: Double
-    let minDb: Double
-    let avgDb: Double
-    let maxDb: Double
+    let minDb: Double?
+    let avgDb: Double?
+    let maxDb: Double?
 
     private var normalizedLevel: Double {
-        min(max(decibels / 120.0, 0), 1.0)
+        guard let db = decibels else { return 0 }
+        return min(max(db / 120.0, 0), 1.0)
     }
 
     private var thresholdNormalized: Double {
@@ -43,7 +44,7 @@ struct GaugeView: View {
 
                 // 数値表示
                 VStack(spacing: 2) {
-                    Text(String(format: "%.1f", decibels))
+                    Text(decibels.map { String(format: "%.1f", $0) } ?? "--")
                         .font(.system(size: 52, weight: .bold, design: .rounded))
                         .foregroundStyle(.white)
                     Text("DECIBELS")
@@ -102,7 +103,7 @@ private struct ThresholdMarker: View {
 
 private struct StatColumn: View {
     let label: String
-    let value: Double
+    let value: Double?
     let color: Color
 
     var body: some View {
@@ -111,7 +112,7 @@ private struct StatColumn: View {
                 .font(.system(size: 11, weight: .medium))
                 .foregroundStyle(.gray)
                 .tracking(1)
-            Text(String(format: "%.1f", value))
+            Text(value.map { String(format: "%.1f", $0) } ?? "--")
                 .font(.system(size: 22, weight: .bold, design: .rounded))
                 .foregroundStyle(color)
             Text("dB")
